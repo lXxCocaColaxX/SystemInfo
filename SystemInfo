@@ -1,72 +1,56 @@
-$ErrorActionPreference = "SilentlyContinue"
+<#
+.SYNOPSIS
+    Muestra información del sistema (hardware, red y discos)
+#>
 
 function Show-Header {
     Clear-Host
-    Write-Host ""
-    Write-Host -ForegroundColor Blue "          ███████╗██╗   ██╗███████╗████████╗███████╗███╗   ██╗██████╗ ███████╗"
-    Write-Host -ForegroundColor Cyan "          ██╔════╝╚██╗ ██╔╝██╔════╝╚══██╔══╝██╔════╝████╗  ██║██╔══██╗██╔════╝"
-    Write-Host -ForegroundColor Blue "          ███████╗ ╚████╔╝ ███████╗   ██║   █████╗  ██╔██╗ ██║██║  ██║█████╗  "
-    Write-Host -ForegroundColor Cyan "          ╚════██║  ╚██╔╝  ╚════██║   ██║   ██╔══╝  ██║╚██╗██║██║  ██║██╔══╝  "
-    Write-Host -ForegroundColor Blue "          ███████║   ██║   ███████║   ██║   ███████╗██║ ╚████║██████╔╝███████╗"
-    Write-Host -ForegroundColor Cyan "          ╚══════╝   ╚═╝   ╚══════╝   ╚═╝   ╚══════╝╚═╝  ╚═══╝╚═════╝ ╚══════╝"
-    Write-Host ""
-    Write-Host -ForegroundColor Yellow "                          https://github.com/lXxCocaColaxX/SystemInfo"
+    Write-Host -ForegroundColor Blue "          _____           _   _ _____ _____  ___  "
+    Write-Host -ForegroundColor Cyan "         /  ___|         | | | |_   _|  ___|/ _ \ "
+    Write-Host -ForegroundColor Blue "         \ \`--. _   _ ___| |_| | | | | |__ / /_\ \"
+    Write-Host -ForegroundColor Cyan "          \`--. \ | | / __|  _  | | | |  __||  _  |"
+    Write-Host -ForegroundColor Blue "         /\__/ / |_| \__ \ | | |_| |_| |___| | | |"
+    Write-Host -ForegroundColor Cyan "         \____/ \__, |___\_| |_/\___/\____/\_| |_/"
+    Write-Host -ForegroundColor Blue "                 __/ |                           "
+    Write-Host -ForegroundColor Cyan "                |___/                            "
     Write-Host ""
 }
 
 function Get-SystemInfo {
-    # Información Básica
+    # Hardware
     $os = (Get-CimInstance Win32_OperatingSystem).Caption
     $cpu = (Get-CimInstance Win32_Processor).Name
     $ram = [math]::Round((Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum /1GB, 2)
     $gpu = (Get-CimInstance Win32_VideoController).Name
     
-    # Información de Red
+    # Red
     $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {
         $_.InterfaceAlias -match "Ethernet|Wi-Fi" -and $_.IPAddress -ne "127.0.0.1"
     }).IPAddress
     
     # Discos
-    $discos = Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} | ForEach-Object {
-        [PSCustomObject]@{
-            Unidad = $_.DeviceID
-            Total = [math]::Round($_.Size/1GB, 2)
-            Libre = [math]::Round($_.FreeSpace/1GB, 2)
-        }
-    }
+    $discos = Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3}
 
-    # Mostrar información
-    Write-Host -ForegroundColor Green "`n[🖥️ Sistema Operativo]" -NoNewline
+    # Mostrar info
+    Write-Host -ForegroundColor Yellow "`n[🖥️ Sistema Operativo]" -NoNewline
     Write-Host " $os"
-    
-    Write-Host -ForegroundColor Green "[⚡ Procesador]" -NoNewline
+    Write-Host -ForegroundColor Yellow "`n[⚡ Procesador]" -NoNewline
     Write-Host " $cpu"
-    
-    Write-Host -ForegroundColor Green "[💾 Memoria RAM]" -NoNewline
+    Write-Host -ForegroundColor Yellow "`n[💾 Memoria RAM]" -NoNewline
     Write-Host " $ram GB"
-    
-    Write-Host -ForegroundColor Green "[🎮 Tarjeta Gráfica]" -NoNewline
+    Write-Host -ForegroundColor Yellow "`n[🎮 Gráficos]" -NoNewline
     Write-Host " $gpu"
-    
-    Write-Host -ForegroundColor Green "`n[🌐 Dirección IP]" -NoNewline
+    Write-Host -ForegroundColor Yellow "`n[🌐 Dirección IP]" -NoNewline
     Write-Host " $ip"
-    
-    Write-Host -ForegroundColor Green "`n[💽 Almacenamiento]"
-    $discos | Format-Table @{
-        Label = "Unidad"
-        Expression = {$_.Unidad}
-    }, @{
-        Label = "Espacio Libre"
-        Expression = {"$($_.Libre) GB"}
-    }, @{
-        Label = "Capacidad Total"
-        Expression = {"$($_.Total) GB"}
-    } -AutoSize
+    Write-Host -ForegroundColor Yellow "`n[💽 Discos]"
+    foreach ($disco in $discos) {
+        $free = [math]::Round($disco.FreeSpace/1GB, 2)
+        $total = [math]::Round($disco.Size/1GB, 2)
+        Write-Host " $($disco.DeviceID): $free GB libres de $total GB"
+    }
 }
 
+# Ejecutar
 Show-Header
 Get-SystemInfo
-
-Write-Host ""
-Read-Host "Presiona Enter para salir..."
-exit
+Read-Host "`nPresiona Enter para salir..."
