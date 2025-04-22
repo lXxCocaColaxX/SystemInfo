@@ -1,0 +1,38 @@
+Clear-Host
+
+# Arte ASCII con tu nombre
+Write-Host -ForegroundColor Cyan "  ___ _   _ _____ ___  ___  __  __ ___  "
+Write-Host -ForegroundColor Blue " / __| | | |_   _/ _ \| _ \|  \/  | _ \ "
+Write-Host -ForegroundColor Cyan "| (__| |_| | | || (_) |  _/| |\/| |  _/ "
+Write-Host -ForegroundColor Blue " \___|\___/  |_| \___/|_|  |_|  |_|_|  "
+
+# Función para mostrar datos
+function Get-SystemInfo {
+    # Hardware
+    $os = (Get-CimInstance Win32_OperatingSystem).Caption
+    $cpu = (Get-CimInstance Win32_Processor).Name
+    $ram = [math]::Round((Get-CimInstance Win32_PhysicalMemory | Measure-Object -Property Capacity -Sum).Sum /1GB, 2)
+    $gpu = (Get-CimInstance Win32_VideoController).Name
+    
+    # Red
+    $ip = (Get-NetIPAddress -AddressFamily IPv4 | Where-Object {$_.InterfaceAlias -like "*Wi-Fi*" -or $_.InterfaceAlias -like "*Ethernet*"}).IPAddress
+    
+    # Mostrar info
+    Write-Host -ForegroundColor Yellow "`n[Hardware]"
+    Write-Host "SO: $os"
+    Write-Host "CPU: $cpu"
+    Write-Host "RAM: $ram GB"
+    Write-Host "GPU: $gpu"
+    
+    Write-Host -ForegroundColor Yellow "`n[Red]"
+    Write-Host "IP: $ip"
+    
+    Write-Host -ForegroundColor Yellow "`n[Disco]"
+    Get-CimInstance Win32_LogicalDisk | Where-Object {$_.DriveType -eq 3} | ForEach-Object {
+        Write-Host "$($_.DeviceID): $([math]::Round($_.FreeSpace/1GB,2)) GB libres de $([math]::Round($_.Size/1GB,2)) GB"
+    }
+    
+    Read-Host "`nPresiona Enter para salir..."
+}
+
+Get-SystemInfo
